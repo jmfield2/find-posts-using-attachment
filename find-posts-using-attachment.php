@@ -39,6 +39,7 @@ class Find_Posts_Using_Attachment {
 			) );
 
 			$used_as_thumbnail = $thumbnail_query->posts;
+
 		}
 
 		$attachment_urls = array( wp_get_attachment_url( $attachment_id ) );
@@ -66,11 +67,17 @@ class Find_Posts_Using_Attachment {
 			$used_in_content = array_merge( $used_in_content, $content_query->posts );
 		}
 
+		// terms
+		$used_in_product_cat = array();
+		$terms = get_terms( array( 'taxonomy' => 'product_cat', 'meta_key' => 'thumbnail_id', 'meta_value' => $attachment_id, 'exclude' => $attachment_id ) );
+		foreach ($terms as $term) $used_in_product_cat[] = $term->term_id;
+
 		$used_in_content = array_unique( $used_in_content );
 
 		$posts = array(
 			'thumbnail' => $used_as_thumbnail,
 			'content'   => $used_in_content,
+			'product_cat' => $used_in_product_cat,
 		);
 
 		return $posts;
@@ -120,6 +127,15 @@ class Find_Posts_Using_Attachment {
 			}
 
 			$output .= sprintf( $item_format, $link, get_the_time( __( 'Y/m/d', 'find-posts-using-attachment' ) ), $usage_context );
+		}
+
+		foreach ( $post_ids['product_cat'] as $term_id ) {
+			$term = get_term( $term_id );
+
+			$link = sprintf( '<a href="%s">%s</a>', sprintf("/wp-admin/term.php?taxonomy=%s&tag_ID=%d&post_type=product", $term->taxonomy, $term->term_id), $term->name );
+
+			$output .= sprintf( $item_format, $link, "", "(as Product Category Image)" );
+
 		}
 
 		if ( ! $output ) {
